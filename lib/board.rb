@@ -4,7 +4,7 @@ require './space'
 
 class Board
   # @spaces = 40
-  @@space_names = [
+  SPACE_NAMES = [
     "Go",
     "Mediteranean Avenue",
     "Community Chest",
@@ -46,33 +46,45 @@ class Board
     "Luxury Tax",
     "Boardwalk"
   ]
-  @@JAIL = 10
+  JAIL = 10
+  GOTO_JAIL = 30
+  CHANCE = [7,22,37]
+  COMMUNITY_CHEST = [2,17,33]
 
   def initialize
+    puts "initializing"
     @dice   = DiceRoller.new
     @player = Player.new
     @spaces = Array.new
     
-    @@space_names.each do |name|
-      @spaces.push(space.new(name))
+    SPACE_NAMES.each do |name|
+      puts "Adding" + name
+      @spaces.push(Space.new(name))
     end
   end
   
   def move_player(moves)
+    puts "Moving player %d spaces" % moves
     @player.position += moves
-    @spaces[@player.position].hit
+    @spaces[@player.position % @spaces.length].hit
   end
   
   def jail_player
-    @player.position = @@JAIL
-    @spaces[@@JAIL].hit
+    puts "Jailing player"
+    @player.position = JAIL
+    @spaces[JAIL].hit
   end
   
   def turn
+    puts "Rolling dice"
     die1 = @dice.d6
     die2 = @dice.d6
+    puts "The die rolls were %d, %d" % [ die1, die2 ]
+    
+    
     if die1 == die2
       @player.increment_double_count
+      puts "Doubles!"
     end
     
     if @player.double_count > 2
@@ -81,5 +93,19 @@ class Board
     else
       move_player(die1 + die2)
     end
+    
+    relative_pos = @player.position % @spaces.length
+    
+    if relative_pos == GOTO_JAIL
+      jail_player
+    elsif CHANCE.include?(relative_pos)
+      puts "reading chance card"
+    elsif COMMUNITY_CHEST.include?(relative_pos)
+      puts "Reading community chest card"
+    end
+  end
+  
+  def spaces
+    @spaces
   end
 end
