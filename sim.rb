@@ -4,17 +4,20 @@ require 'game'
 require 'logging'
 require 'CSV'
 
-g = Game.new
-for i in 0..100
-  g.turn
-end
+Run1 = [100,200,500,1000,2000,5000]
 
-CSV.open("test.csv", "wb") do |csv|
-  csv << ["Name", "Hits"]
-  
-  g.board.spaces.each do |space|
-    csv << [space.name, space.hit_count]
+Run1.each do |turns|
+  g = Game.new
+  for i in 0..turns
+    g.turn
   end
+  CSV.open("monopoly-#{turns}-turns.csv", "wb") do |csv|
+    csv << ["Name", "Hits"]
   
-  csv << ["Total hits",100]
+    g.board.spaces.each do |space|
+      csv << [space.name, space.hit_count]
+    end
+  
+    csv << ["Total hits",turns]
+  end
 end

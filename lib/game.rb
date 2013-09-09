@@ -48,11 +48,17 @@ class Game
     "Luxury Tax",
     "Boardwalk"
   ]
-  
-  JAIL = 10
-  GOTO_JAIL = 30
-  CHANCE = [7,22,37]
-  COMMUNITY_CHEST = [2,17,33]
+
+  GO                = 0
+  ILLINOIS          = 24
+  ST_CHARLES        = 11
+  JAIL              = 10
+  GOTO_JAIL         = 30
+  READING_RAILROAD  = 5
+  RAILROADS         = [5,15,25,35]
+  UTILS             = [12,28]
+  CHANCE            = [7,22,37]
+  COMMUNITY_CHEST   = [2,17,33]
   
   
   COMM_CHEST_CARDS = [
@@ -123,39 +129,92 @@ class Game
     @board.move_player_absolute(JAIL)
   end
   
+  def read_comm_chest_card
+    Logging::log.debug("Reading Community Chest card: " + card = @comm.next_card)
+    case card
+    when COMM_GO
+      Logger::log.debug("Moving player to Go")
+      @board.move_player_absolute(GO)
+    when COMM_JAIL
+      jail_player
+    end
+  end
+  
+  def read_chance_card
+    Logging::log.debug("Reading Chance card: " + card = @chance.next_card)
+    case card
+    when CHANCE_GO
+      Logger::log.debug("Moving player to go")
+      @board.move_player_absolute(GO)
+    when CHANCE_ILLINOIS
+      Logger::log.debug("Moving Player to Illinois Ave")
+      @board.move_player_absolute(ILLINOIS)
+    when CHANCE_ST_CHARLES
+      Logger::log.debug("Moving player to St. Charles Place")
+      @board.move_player_absolute(ST_CHARLES)
+    when CHANCE_UTIL
+      Logger::log.debug("Moving to nearest utility")
+      pos = @board.player_relative_position
+      while !UTILS.include?(pos)
+        pos += 1
+      end
+      @board.move_player_absolute(pos)
+    when CHANCE_RR
+      Logger::log.debug("Moving to nearest railroad")
+      pos = @board.player_relative_position
+      while !RR.include?(pos)
+        pos += 1
+      end
+      @board.move_player_absolute(pos)
+    when CHANCE_BACK_THREE
+      Logger::log.debug("Moving back three spaces")
+      @board.move_player_relative(-3)
+      if COMMUNITY_CHEST.include?(@board.player_relative_position)
+        read_comm_chest_card
+      end
+    when CHANCE_JAIL
+      jail_player
+    when CHANCE_READING_RAILROAD
+      Logger::log.debug("Moving player to The Reading Railroad")
+      @board.move_player_absolute(READING_RAILROAD)
+    when CHANCE_BOARDWALK
+      Logger::log.debug("Moving player to Boardwalk")
+      @board.move_player_absolute(BOARDWALK)
+    end
+  end
+    
+  
   def turn
     die1 = @dice.d6
     die2 = @dice.d6
     Logging::log.debug("The die rolls were %d, %d" % [ die1, die2 ])
     
     
+    # If doubles, log it and increment the count of doubles. If not, clear the double counter
     if die1 == die2
       @player.increment_double_count
       Logging::log.debug("Doubles!")
-      
     else
       @player.double_count = 0
-      
     end
     
+    # If we just roller our third double, to the slammer with you
     if @player.double_count > 2
       @player.double_count = 0
+      Logging::log.debug("Rolled three doubles in a row")
       jail_player
-      
     else
       @board.move_player_relative(die1 + die2)
-      
     end
     
+    # If we have landed on any special spaces, go to jail or draw an action
     if @board.player_relative_position == GOTO_JAIL
       Logging::log.debug("Landed on Go To Jail")
       jail_player
     elsif CHANCE.include?(@board.player_relative_position)
-      Logging::log.debug("Reading chance card")
-      Logging::log.debug(@chance.next_card)
+      read_chance_card
     elsif COMMUNITY_CHEST.include?(@board.player_relative_position)
-      Logging::log.debug("Reading community chest card")
-      Logging::log.debug(@comm.next_card)
+      read_comm_chest_card
     end
   end
 end
