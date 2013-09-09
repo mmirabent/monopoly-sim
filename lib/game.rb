@@ -122,6 +122,8 @@ class Game
     @board  = Board.new(SPACE_NAMES, @player)
     @comm   = CardDeck.new(COMM_CHEST_CARDS)
     @chance = CardDeck.new(CHANCE_CARDS)
+    @comm.shuffle
+    @chance.shuffle
   end
   
   def jail_player
